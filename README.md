@@ -5,6 +5,26 @@
 > for causal recovery lift measurement with **Mixed-Integer Linear
 > Programming (MILP)** for resource-constrained outreach optimization.
 
+[![CI](https://github.com/404Piyush/collections-causal-allocation/actions/workflows/ci.yml/badge.svg)](https://github.com/404Piyush/collections-causal-allocation/actions/workflows/ci.yml)
+![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)
+![License MIT](https://img.shields.io/badge/license-MIT-green.svg)
+
+---
+
+## Architecture
+
+```mermaid
+flowchart LR
+    A[data/build_dataset.py<br/>LC download + synthetic overlay] --> B[data/processed/<br/>collections_dataset.csv]
+    B --> C[src/rdd/<br/>bandwidth, local_linear,<br/>placebo, density, balance]
+    C --> D[RDD estimate<br/>τ̂ = causal recovery lift]
+    D --> E[src/milp/optimizer.py<br/>PuLP / CBC]
+    B --> E
+    E --> F[Allocation plan<br/>channel × tier × borrower]
+    F --> G[src/evaluation/metrics.py<br/>3-scenario KPI]
+    G --> H[outputs/figures/*.png<br/>outputs/reports/*.csv]
+```
+
 ---
 
 ## 1. Business Problem
