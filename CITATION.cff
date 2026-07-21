@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+title: "Constrained Collections Allocation and Causal Recovery Optimization Platform"
+message: >
+  If you use this software in your research, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - family-names: Utkar
+    given-names: Piyush
+    email: piyushutkar123@gmail.com
+    orcid: https://orcid.org/0000-0000-0000-0000
+license: MIT
+date-released: 2026-07-21
+version: 0.2.0
+keywords:
+  - causal-inference
+  - regression-discontinuity
+  - mixed-integer-programming
+  - operations-research
+  - collections-recovery
+  - credit-risk
+  - optimization
+abstract: >
+  Combines Regression Discontinuity Design for causal recovery lift
+  measurement with Mixed-Integer Linear Programming for resource-
+  constrained outreach allocation. Includes Imbens-Kalyanaraman
+  bandwidth selection, local linear regression with a triangular
+  kernel, placebo cutoff testing, density/manipulation testing,
+  covariate balance, full MILP solver (PuLP/CBC), and three-scenario
+  KPI evaluation.
+repository-code: "https://github.com/404Piyush/collections-causal-allocation"
+repository: "https://github.com/404Piyush/collections-causal-allocation"
+url: "https://github.com/404Piyush/collections-causal-allocation"
