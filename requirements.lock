@@ -1,0 +1,25 @@
+# Pinned versions of dependencies used by this project.
+# Generated from a working Python 3.11.4 environment.
+# Install with: pip install -r requirements.lock
+# Note: CI resolves transitive dependencies fresh on each run.
+numpy==1.26.4
+pandas==2.2.3
+scipy==1.16.0
+scikit-learn==1.6.1
+statsmodels==0.14.4
+matplotlib==3.10.3
+seaborn==0.13.2
+PuLP==3.3.2
+tqdm==4.67.1
+requests==2.32.3
+
+# Development / testing / security
+pytest==8.4.1
+bandit==1.9.4
+
+# Notebook demo (optional, for notebooks/demo.ipynb)
+ipykernel==7.3.0
+nbconvert==7.17.1
+nbformat==5.10.4
+jupyter_client==8.9.1
+jupyter_core==5.9.1
