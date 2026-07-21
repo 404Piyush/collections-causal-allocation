@@ -8,7 +8,6 @@ If a treatment-induced sorting caused bunching the histogram would jump.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Tuple
 
 import numpy as np
 from scipy import stats as st
@@ -37,8 +36,8 @@ def density_test(
     n = len(R)
     h = max(np.std(R) * 1.06 * n ** (-0.2), 1.0) * h_fraction
 
-    left_mask = (R >= cutoff - h) & (R < cutoff)
-    right_mask = (R >= cutoff) & (R < cutoff + h)
+    left_mask = (cutoff - h <= R) & (cutoff > R)
+    right_mask = (cutoff <= R) & (cutoff + h > R)
 
     bins = np.linspace(-h, h, n_bins + 1)
     counts_left, _ = np.histogram(R[left_mask] - cutoff, bins=bins)
@@ -61,7 +60,7 @@ def density_test(
     )
 
 
-def density_pair(t1: np.ndarray, t2: np.ndarray) -> Tuple[float, float]:
+def density_pair(t1: np.ndarray, t2: np.ndarray) -> tuple[float, float]:
     """Simple z-test for two histograms."""
     n1, n2 = len(t1), len(t2)
     if n1 == 0 or n2 == 0:

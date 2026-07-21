@@ -6,31 +6,95 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
-    name: pytest + bandit
+  lint:
+    name: Lint (ruff, black, isort)
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python 3.11
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
+      - run: pip install ruff black isort
+      - run: ruff check src tests run_pipeline.py
+      - run: black --check --line-length 100 src tests run_pipeline.py
+      - run: isort --check-only --profile black --line-length 100 src tests run_pipeline.py
 
+  type-check:
+    name: Type-check (mypy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: mypy src
+
+  security:
+    name: Security (bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install bandit
+      - run: bandit -r src data run_pipeline.py -q
+
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.lock
+          pip install pytest pytest-cov
+      - name: Run unit tests with coverage
+        run: pytest --cov=src --cov-report=xml --cov-report=term-missing
+      - name: Upload coverage artifact
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+          retention-days: 7
 
-      - name: Install test deps
-        run: pip install pytest bandit
-
-      - name: Run unit tests
-        run: pytest tests/ -q
-
-      - name: Run security audit
-        run: bandit -r src data run_pipeline.py -q
+  notebook:
+    name: Notebook (execute)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.lock
+          pip install -e ".[notebook]"
+          pip install jupyter
+      - run: |
+          python notebooks/_build.py
+          python -m jupyter nbconvert --to notebook --execute --inplace notebooks/demo.ipynb

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
 
 import numpy as np
 
@@ -24,10 +23,10 @@ class PlaceboResult:
 def run_placebo(
     R: np.ndarray,
     Y: np.ndarray,
-    placebos: List[float],
+    placebos: list[float],
     pilot_p: int = 4,
-) -> List[PlaceboResult]:
-    out: List[PlaceboResult] = []
+) -> list[PlaceboResult]:
+    out: list[PlaceboResult] = []
     for c in placebos:
         if R.min() > c or R.max() < c:
             continue

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict
 
 import numpy as np
 
@@ -23,10 +22,10 @@ class CovariateResult:
 
 def covariate_balance_test(
     R: np.ndarray,
-    covariates: Dict[str, np.ndarray],
+    covariates: dict[str, np.ndarray],
     cutoff: float,
-) -> Dict[str, CovariateResult]:
-    out: Dict[str, CovariateResult] = {}
+) -> dict[str, CovariateResult]:
+    out: dict[str, CovariateResult] = {}
     bw = bandwidth.ik_bandwidth(R, np.zeros_like(R), cutoff)
     for name, X in covariates.items():
         res = local_linear.local_linear_rdd(R, X, cutoff, bw["h_left"], bw["h_right"])

@@ -19,7 +19,6 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -31,15 +30,15 @@ if hasattr(sys.stdout, "reconfigure"):
 
 from src import config
 from src.data_loader import load, make_rdd_arrays
+from src.evaluation import metrics
+from src.milp import optimizer, sensitivity
 from src.rdd import bandwidth as bw_mod
 from src.rdd import (
     covariate_balance,
     density_test,
-    local_linear as rdd_ll,
-    placebo as rdd_placebo,
 )
-from src.milp import optimizer, sensitivity
-from src.evaluation import metrics
+from src.rdd import local_linear as rdd_ll
+from src.rdd import placebo as rdd_placebo
 from src.viz import kpi_plots, milp_plots, rdd_plots
 
 
@@ -53,6 +52,7 @@ def _setup_logging() -> None:
 
 def _ensure_dataset() -> None:
     from data.build_dataset import build
+
     res = build()
     LOG.info("Dataset ready: %s rows from %s", f"{res.n_rows:,}", res.source)
 
@@ -64,29 +64,49 @@ def _run_rdd(df: pd.DataFrame) -> None:
     bw = bw_mod.ik_bandwidth(R, Y, cutoff=config.CUTOFF)
     LOG.info(
         "Bandwidths: left=%.1f, right=%.1f, pilot=%.1f",
-        bw["h_left"], bw["h_right"], bw["h_global"],
+        bw["h_left"],
+        bw["h_right"],
+        bw["h_global"],
     )
     res = rdd_ll.local_linear_rdd(R, Y, config.CUTOFF, bw["h_left"], bw["h_right"])
-    LOG.info("τ̂ = $%.2f  (95%% CI [%.2f, %.2f], p=%.4g, n_eff=%.0f)",
-             res.tau_hat, res.ci_low, res.ci_high, res.p_value, res.n_effective)
+    LOG.info(
+        "τ̂ = $%.2f  (95%% CI [%.2f, %.2f], p=%.4g, n_eff=%.0f)",
+        res.tau_hat,
+        res.ci_low,
+        res.ci_high,
+        res.p_value,
+        res.n_effective,
+    )
 
     config.FIG_DIR.mkdir(parents=True, exist_ok=True)
     config.REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
     rdd_plots.plot_binned_scatter(
-        R, Y, config.CUTOFF, bw["h_left"], res,
+        R,
+        Y,
+        config.CUTOFF,
+        bw["h_left"],
+        res,
         config.FIG_DIR / "rdd_binned_scatter.png",
     )
 
-    sens = rdd_plots.plot_bandwidth_sensitivity(
-        R, Y, config.CUTOFF, base_h=bw["h_left"],
+    rdd_plots.plot_bandwidth_sensitivity(
+        R,
+        Y,
+        config.CUTOFF,
+        base_h=bw["h_left"],
         output_path=config.FIG_DIR / "rdd_bandwidth_sensitivity.png",
     )
 
     placebos_ik = rdd_placebo.run_placebo(R, Y, config.PLACEBO_CUTOFFS)
     rdd_plots.plot_placebo(
-        R, Y, placebos_ik, config.CUTOFF,
-        res.tau_hat, res.ci_low, res.ci_high,
+        R,
+        Y,
+        placebos_ik,
+        config.CUTOFF,
+        res.tau_hat,
+        res.ci_low,
+        res.ci_high,
         config.FIG_DIR / "rdd_placebo.png",
     )
 
@@ -99,9 +119,7 @@ def _run_rdd(df: pd.DataFrame) -> None:
         "dti": df["dti"].to_numpy(dtype=float),
         "outstanding_balance": df["outstanding_balance"].to_numpy(dtype=float),
     }
-    cov_res = covariate_balance.covariate_balance_test(
-        R, cov_dict, config.CUTOFF
-    )
+    cov_res = covariate_balance.covariate_balance_test(R, cov_dict, config.CUTOFF)
     rdd_plots.plot_covariate_balance(cov_res, config.FIG_DIR / "rdd_covariate_balance.png")
 
     rdd_summary = {
@@ -123,9 +141,7 @@ def _run_rdd(df: pd.DataFrame) -> None:
         {"covariate": r.covariate, "tau_hat": r.tau_hat, "se_tau": r.se_tau, "p_value": r.p_value}
         for r in cov_res.values()
     ]
-    pd.DataFrame(cov_rows).to_csv(
-        config.REPORT_DIR / "rdd_covariate_balance.csv", index=False
-    )
+    pd.DataFrame(cov_rows).to_csv(config.REPORT_DIR / "rdd_covariate_balance.csv", index=False)
 
     placebo_rows = [
         {
@@ -137,9 +153,7 @@ def _run_rdd(df: pd.DataFrame) -> None:
         }
         for p in placebos_ik
     ]
-    pd.DataFrame(placebo_rows).to_csv(
-        config.REPORT_DIR / "rdd_placebo.csv", index=False
-    )
+    pd.DataFrame(placebo_rows).to_csv(config.REPORT_DIR / "rdd_placebo.csv", index=False)
 
 
 def _run_milp(df: pd.DataFrame) -> tuple[optimizer.OptimizationResult, pd.DataFrame]:
@@ -149,8 +163,12 @@ def _run_milp(df: pd.DataFrame) -> tuple[optimizer.OptimizationResult, pd.DataFr
     )
     LOG.info(
         "MILP status=%s  objective=$%.2f  assigned=%s/%s  total cost=$%.2f  expected recovery=$%.2f",
-        res.status, res.objective, f"{res.n_assigned:,}", f"{len(df):,}",
-        res.cost_total, res.expected_recovery,
+        res.status,
+        res.objective,
+        f"{res.n_assigned:,}",
+        f"{len(df):,}",
+        res.cost_total,
+        res.expected_recovery,
     )
     LOG.info("Channel distribution: %s", res.channel_distribution)
     LOG.info("Tier distribution: %s", res.tier_distribution)
@@ -183,9 +201,7 @@ def _run_kpis(df: pd.DataFrame, milp_res, milp_assign) -> None:
     LOG.info("\n%s", comp.to_string(index=False))
 
     kpi_plots.plot_kpi_summary(comp, config.FIG_DIR / "kpi_summary.png")
-    kpi_plots.plot_waterfall_improvement(
-        comp, config.FIG_DIR / "kpi_improvement_waterfall.png"
-    )
+    kpi_plots.plot_waterfall_improvement(comp, config.FIG_DIR / "kpi_improvement_waterfall.png")
 
 
 def main() -> None:
@@ -217,10 +233,14 @@ def _print_summary(df, milp_res, milp_assign, elapsed):
     p = float(rdd_df["p_value"])
     print(f"\nPortfolio      : {len(df):,} charged-off accounts")
     print(f"Outreach cutoff: c = ${float(rdd_df['cutoff']):.0f} expected recovery score")
-    print(f"RDD causal lift: tau = ${tau:.1f} per account "
-          f"(95% CI [${ci_low:.1f}, ${ci_high:.1f}], p={p:.3g})")
-    print(f"MILP optimizer : status = {milp_res.status}, "
-          f"assigned {milp_res.n_assigned:,} of {len(df):,} accounts")
+    print(
+        f"RDD causal lift: tau = ${tau:.1f} per account "
+        f"(95% CI [${ci_low:.1f}, ${ci_high:.1f}], p={p:.3g})"
+    )
+    print(
+        f"MILP optimizer : status = {milp_res.status}, "
+        f"assigned {milp_res.n_assigned:,} of {len(df):,} accounts"
+    )
     print()
     print(comp.to_string(index=False))
     print(f"\nOutputs saved to {config.OUTPUT_DIR}")

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Tuple
 
 import numpy as np
 
@@ -28,11 +27,10 @@ class RDDResult:
 
 def _triangular_kernel(u: np.ndarray, h: float) -> np.ndarray:
     rel = np.abs(u) / max(float(h), 1e-9)
-    w = np.maximum(0.0, 1.0 - rel)
-    return w
+    return np.maximum(0.0, 1.0 - rel)
 
 
-def _wls(X: np.ndarray, Y: np.ndarray, w: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def _wls(X: np.ndarray, Y: np.ndarray, w: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Weighted least squares with HC1 robust standard errors."""
     wsqrt = np.sqrt(np.maximum(w, 0.0))
     Xw = X * wsqrt[:, None]
@@ -45,11 +43,11 @@ def _wls(X: np.ndarray, Y: np.ndarray, w: np.ndarray) -> Tuple[np.ndarray, np.nd
     beta = XtX_inv @ (Xw.T @ Yw)
 
     resid = Y - X @ beta
-    meat = Xw.T @ np.diag(w * resid ** 2) @ Xw
+    meat = Xw.T @ np.diag(w * resid**2) @ Xw
     cov_hc1 = XtX_inv @ meat @ XtX_inv
     sumw = w.sum() or 1.0
-    n_eff = int((sumw ** 2) / np.maximum((w ** 2).sum(), 1e-12))
-    cov_hc1 *= (n_eff / max(n_eff - X.shape[1], 1))
+    n_eff = int((sumw**2) / np.maximum((w**2).sum(), 1e-12))
+    cov_hc1 *= n_eff / max(n_eff - X.shape[1], 1)
     se = np.sqrt(np.maximum(np.diag(cov_hc1), 0.0))
     return beta, se
 
@@ -70,7 +68,7 @@ def local_linear_rdd(
     R = np.asarray(R, dtype=float)
     Y = np.asarray(Y, dtype=float)
     Rc = R - cutoff
-    T = (R >= cutoff).astype(float)
+    T = (cutoff <= R).astype(float)
 
     left = Rc <= 0
     right = ~left
@@ -88,6 +86,7 @@ def local_linear_rdd(
     tau = float(beta[2])
     se_tau = float(se[2]) if len(se) > 2 else float("nan")
     from scipy import stats as st
+
     ci_low = tau - 1.96 * se_tau
     ci_high = tau + 1.96 * se_tau
     df = max(int((w > 0).sum() - Xw.shape[1]), 1)
@@ -125,5 +124,7 @@ def side_means(R: np.ndarray, Y: np.ndarray, cutoff: float, h: float):
     w_left = _triangular_kernel(-Rc[left], h)
     w_right = _triangular_kernel(Rc[right], h)
     m_left = float((Y[left] * w_left).sum() / w_left.sum()) if w_left.sum() > 0 else float("nan")
-    m_right = float((Y[right] * w_right).sum() / w_right.sum()) if w_right.sum() > 0 else float("nan")
+    m_right = (
+        float((Y[right] * w_right).sum() / w_right.sum()) if w_right.sum() > 0 else float("nan")
+    )
     return m_left, m_right

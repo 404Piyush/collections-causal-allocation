@@ -10,7 +10,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.data_loader import load, make_rdd_arrays, make_milp_arrays
+from src.data_loader import load, make_milp_arrays, make_rdd_arrays
 
 
 def test_data_loader_returns_dataframe():

@@ -11,8 +11,6 @@ We use c = 2.3 (recommended by Fan & Gijbels for triangular kernel).
 
 from __future__ import annotations
 
-from typing import Dict
-
 import numpy as np
 
 
@@ -66,7 +64,7 @@ def _m2_estimate(R: np.ndarray, Y: np.ndarray) -> float:
         m2 = float(coef[0]) * 2.0
     except Exception:
         m2 = 0.0
-    return float(m2 ** 2)
+    return float(m2**2)
 
 
 def ik_bandwidth(
@@ -75,12 +73,12 @@ def ik_bandwidth(
     cutoff: float,
     pilot_p: int = 4,
     kernel_p: int = 2,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Compute Fan-Gijbels-style MSE-optimal bandwidths separately on each side."""
     R = np.asarray(R, dtype=float)
     Y = np.asarray(Y, dtype=float)
 
-    left = R < cutoff
+    left = cutoff > R
     right = ~left
 
     n_left = int(left.sum())

@@ -1,0 +1,142 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "collections-causal-allocation"
+version = "0.2.0"
+description = "Regression Discontinuity Design + MILP engine for causal debt-collection recovery estimation and constrained outreach allocation."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Piyush Utkar", email = "piyushutkar123@gmail.com"},
+]
+keywords = [
+    "causal-inference",
+    "regression-discontinuity",
+    "mixed-integer-programming",
+    "operations-research",
+    "collections-recovery",
+    "credit-risk",
+    "optimization",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Office/Business :: Financial",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/404Piyush/collections-causal-allocation"
+Repository = "https://github.com/404Piyush/collections-causal-allocation.git"
+Issues = "https://github.com/404Piyush/collections-causal-allocation/issues"
+Changelog = "https://github.com/404Piyush/collections-causal-allocation/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+notebook = ["ipykernel>=6", "nbconvert>=7", "nbformat>=5", "jupyter-client>=8", "jupyter-core>=5"]
+dev = [
+    "bandit>=1.7",
+    "black>=24",
+    "isort>=5",
+    "mypy>=1.8",
+    "pre-commit>=3.5",
+    "pytest>=8",
+    "pytest-cov>=5",
+    "ruff>=0.4",
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+exclude = ["tests*", "data*", "docs*", "notebooks*", "outputs*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311", "py312"]
+include = '\.pyi?$'
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["data", "outputs", ".venv", "build", "dist"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "N",   # pep8-naming
+    "C4",  # flake8-comprehensions
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+]
+ignore = [
+    "E501", # line-too-long (handled by black)
+    "B008", # function call in default argument (common in pandas)
+    "N803", # invalid-argument-name (math/scipy idiom: R, Y, T, i, j, k)
+    "N806", # mixed-case variable names (math/scipy idiom)
+    "E402", # module-import-not-at-top (sys.path bootstrap in entrypoints)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]  # asserts are fine in tests
+"run_pipeline.py" = ["E402"]  # sys.path bootstrap
+
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = ["src"]
+known_third_party = ["pandas", "numpy", "scipy", "sklearn", "statsmodels", "pulp", "matplotlib", "seaborn"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+exclude = ["data/", "outputs/", "tests/"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=src",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-report=xml",
+    "--cov-fail-under=60",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning:pulp.*",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["src"]
+omit = ["data/*", "outputs/*", "tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import List, Sequence
+from collections.abc import Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,12 +23,10 @@ def plot_binned_scatter(
     result: local_linear.RDDResult,
     output_path,
 ):
-    Rc = R - cutoff
     n_bins = config.RDD_N_BINS
     edges = np.linspace(R.min(), R.max(), n_bins + 1)
     bin_idx = np.digitize(R, edges) - 1
     bin_idx = np.clip(bin_idx, 0, n_bins - 1)
-    bin_centers = (edges[:-1] + edges[1:]) / 2
     bin_means_Y = np.zeros(n_bins)
     bin_means_R = np.zeros(n_bins)
     bin_n = np.zeros(n_bins)
@@ -53,7 +51,6 @@ def plot_binned_scatter(
     )
 
     R_grid = np.linspace(cutoff - h, cutoff, 200)
-    w = _triangular_kernel(-(R_grid - cutoff), h)
     pred_left = result.beta0 + result.beta1_left * (R_grid - cutoff)
     ax.plot(R_grid, pred_left, color="#d73027", lw=2.5, label=f"Left fit (h={h:.0f})")
 
@@ -88,12 +85,11 @@ def plot_bandwidth_sensitivity(
     output_path,
     multipliers: Sequence[float] = config.RDD_BANDWIDTH_GRID,
 ):
-    Rc = R - cutoff
     h_left_grid = base_h * np.array(multipliers)
     h_right_grid = base_h * np.array(multipliers)
 
     rows = []
-    for hl, hr in zip(h_left_grid, h_right_grid):
+    for hl, hr in zip(h_left_grid, h_right_grid, strict=True):
         res = local_linear.local_linear_rdd(R, Y, cutoff, hl, hr)
         rows.append((hl, res.tau_hat, res.ci_low, res.ci_high, res.p_value))
 
@@ -121,7 +117,7 @@ def plot_bandwidth_sensitivity(
 def plot_placebo(
     R: np.ndarray,
     Y: np.ndarray,
-    placebos: List[placebo.PlaceboResult],
+    placebos: list[placebo.PlaceboResult],
     real_cutoff: float,
     real_tau: float,
     real_ci_low: float,
@@ -134,16 +130,27 @@ def plot_placebo(
     lcl = [p.ci_low for p in placebos]
     ucl = [p.ci_high for p in placebos]
     ax.errorbar(
-        cs, ts,
+        cs,
+        ts,
         yerr=[np.array(ts) - np.array(lcl), np.array(ucl) - np.array(ts)],
-        fmt="o", color="#4575b4", ecolor="#4575b4", elinewidth=1.5,
-        capsize=4, ms=9, label="Placebo cutoffs",
+        fmt="o",
+        color="#4575b4",
+        ecolor="#4575b4",
+        elinewidth=1.5,
+        capsize=4,
+        ms=9,
+        label="Placebo cutoffs",
     )
     ax.axhline(0, color="black", lw=1, ls=":")
-    ax.axvline(real_cutoff, color="#d73027", lw=2, ls="--", label=f"Real cutoff c={real_cutoff:.0f}")
+    ax.axvline(
+        real_cutoff, color="#d73027", lw=2, ls="--", label=f"Real cutoff c={real_cutoff:.0f}"
+    )
     ax.fill_betweenx(
-        [-50, 50], real_cutoff - 5, real_cutoff + 5,
-        alpha=0.10, color="#d73027",
+        [-50, 50],
+        real_cutoff - 5,
+        real_cutoff + 5,
+        alpha=0.10,
+        color="#d73027",
     )
     ax.set_xlabel("Fake cutoff value (placebo)", fontsize=12)
     ax.set_ylabel("Placebo τ̂", fontsize=12)
@@ -165,10 +172,22 @@ def plot_density(
     fig, ax = plt.subplots(figsize=(10, 5))
     width = (density.bins[1] - density.bins[0]) * 0.45
     centers = (density.bins[:-1] + density.bins[1:]) / 2
-    ax.bar(centers - width / 2, density.counts_left, width=width,
-           color="#4575b4", alpha=0.75, label=f"Left  (n={density.n_left})")
-    ax.bar(centers + width / 2, density.counts_right, width=width,
-           color="#d73027", alpha=0.75, label=f"Right (n={density.n_right})")
+    ax.bar(
+        centers - width / 2,
+        density.counts_left,
+        width=width,
+        color="#4575b4",
+        alpha=0.75,
+        label=f"Left  (n={density.n_left})",
+    )
+    ax.bar(
+        centers + width / 2,
+        density.counts_right,
+        width=width,
+        color="#d73027",
+        alpha=0.75,
+        label=f"Right (n={density.n_right})",
+    )
     ax.axvline(0, color="black", lw=1, ls="--")
     ax.set_xlabel("R - cutoff", fontsize=12)
     ax.set_ylabel("Bin counts", fontsize=12)
@@ -192,9 +211,17 @@ def plot_covariate_balance(cov_results, output_path):
 
     fig, ax = plt.subplots(figsize=(10, max(4.0, len(names) * 0.6)))
     ypos = np.arange(len(names))
-    ax.errorbar(taus, ypos, xerr=[1.96 * s for s in ses],
-                fmt="o", color="#4575b4", ecolor="#4575b4",
-                elinewidth=2, capsize=3, ms=8)
+    ax.errorbar(
+        taus,
+        ypos,
+        xerr=[1.96 * s for s in ses],
+        fmt="o",
+        color="#4575b4",
+        ecolor="#4575b4",
+        elinewidth=2,
+        capsize=3,
+        ms=8,
+    )
     ax.axvline(0, color="black", lw=1, ls="--")
     ax.set_yticks(ypos)
     ax.set_yticklabels(names, fontsize=11)
@@ -202,8 +229,14 @@ def plot_covariate_balance(cov_results, output_path):
     ax.set_xlabel("Covariate discontinuity τ̂ at cutoff (95% CI)", fontsize=12)
     ax.set_title("Covariate balance at cutoff — should be ≈ 0", fontsize=12)
     for i, p in enumerate(ps):
-        ax.text(max(taus[i] + 1.96 * ses[i], 0.01), i, f"p={p:.3f}",
-                va="center", fontsize=9, color="gray")
+        ax.text(
+            max(taus[i] + 1.96 * ses[i], 0.01),
+            i,
+            f"p={p:.3f}",
+            va="center",
+            fontsize=9,
+            color="gray",
+        )
     ax.grid(alpha=0.3, axis="x")
     fig.tight_layout()
     fig.savefig(output_path, dpi=140)

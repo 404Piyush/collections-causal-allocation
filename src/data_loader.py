@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -38,10 +37,10 @@ def load(path: Path = config.PROCESSED_DATA) -> pd.DataFrame:
 
 def make_rdd_arrays(
     df: pd.DataFrame, cutoff: float = config.CUTOFF
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     R = df["expected_recovery_score"].to_numpy(dtype=float)
     Y = df["actual_recovery_amount"].to_numpy(dtype=float)
-    T = (R >= cutoff).astype(float)
+    T = (cutoff <= R).astype(float)
     return R, Y, T
 
 

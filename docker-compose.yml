@@ -1,0 +1,30 @@
+name: collections-optimization
+services:
+  pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: collections-optimization:latest
+    container_name: collections-pipeline
+    volumes:
+      - ./outputs:/app/outputs
+      - ./data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+    profiles:
+      - default
+    command: []  # run full pipeline (ENTRYPOINT default)
+
+  notebook:
+    image: collections-optimization:latest
+    container_name: collections-notebook
+    profiles:
+      - notebook
+    command: >
+      bash -c "pip install -e .[notebook] &&
+               jupyter nbconvert --to notebook --execute --inplace notebooks/demo.ipynb &&
+               jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root"
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./notebooks:/app/notebooks

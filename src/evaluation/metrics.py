@@ -1,14 +1,13 @@
 """Business KPI comparisons across three outreach scenarios.
 
-  Scenario A: All Level 0 (auto only)
-  Scenario B: All Level 1 (current practice)
-  Scenario C: MILP-optimized selection
+Scenario A: All Level 0 (auto only)
+Scenario B: All Level 1 (current practice)
+Scenario C: MILP-optimized selection
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -36,8 +35,6 @@ def _recovery_with_treatment(
       - if not treated: actual_recovery_amount clipped to a self-curing baseline
     """
     Y = df["actual_recovery_amount"].to_numpy(dtype=float)
-    Bal = df["outstanding_balance"].to_numpy(dtype=float)
-    uplift = (Y - (Y * (1 - 0.5 * treat_indicator))).sum()
     rec_total = float((Y * (1 - 0.5 * (1 - treat_indicator))).sum())
     cost_total = float(treat_indicator.sum() * cost_per_treated)
     n_treated = int(treat_indicator.sum())
@@ -100,8 +97,9 @@ def scenario_c_milp(
         net_recovery=round(actual_recovery_proxy - cost_total, 2),
         recovery_rate=actual_recovery_proxy / float(Bal) if Bal > 0 else 0.0,
         avg_cost_per_account=cost_total / max(assignments.shape[0], 1),
-        cost_per_dollar_recovered=cost_total / actual_recovery_proxy
-            if actual_recovery_proxy > 0 else float("inf"),
+        cost_per_dollar_recovered=(
+            cost_total / actual_recovery_proxy if actual_recovery_proxy > 0 else float("inf")
+        ),
     )
 
 
@@ -116,18 +114,23 @@ def build_comparison_table(
     c = scenario_c_milp(df, milp_assignments, milp_cost, milp_expected_recovery)
     rows = []
     for sm in [a, b, c]:
-        rows.append({
-            "scenario": sm.name,
-            "n_accounts": sm.n_accounts,
-            "cost_total_usd": round(sm.cost_total, 2),
-            "actual_recovery_total_usd": round(sm.actual_recovery_total, 2),
-            "net_recovery_usd": round(sm.net_recovery, 2),
-            "recovery_rate": round(sm.recovery_rate, 4),
-            "avg_cost_per_account_usd": round(sm.avg_cost_per_account, 2),
-            "cost_per_dollar_recovered": round(sm.cost_per_dollar_recovered, 4),
-        })
+        rows.append(
+            {
+                "scenario": sm.name,
+                "n_accounts": sm.n_accounts,
+                "cost_total_usd": round(sm.cost_total, 2),
+                "actual_recovery_total_usd": round(sm.actual_recovery_total, 2),
+                "net_recovery_usd": round(sm.net_recovery, 2),
+                "recovery_rate": round(sm.recovery_rate, 4),
+                "avg_cost_per_account_usd": round(sm.avg_cost_per_account, 2),
+                "cost_per_dollar_recovered": round(sm.cost_per_dollar_recovered, 4),
+            }
+        )
     out = pd.DataFrame(rows)
-    baseline = float(out.loc[out["scenario"].str.contains("All Level 1"), "net_recovery_usd"].iloc[0])
-    milp_net = float(out.loc[out["scenario"].str.contains("MILP"), "net_recovery_usd"].iloc[0])
-    out["net_vs_current_pct"] = (out["net_recovery_usd"] / baseline - 1.0) * 100.0 if baseline > 0 else 0.0
+    baseline = float(
+        out.loc[out["scenario"].str.contains("All Level 1"), "net_recovery_usd"].iloc[0]
+    )
+    out["net_vs_current_pct"] = (
+        (out["net_recovery_usd"] / baseline - 1.0) * 100.0 if baseline > 0 else 0.0
+    )
     return out

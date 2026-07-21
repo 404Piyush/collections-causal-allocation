@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Dict, List
 
 import pandas as pd
 
@@ -29,8 +28,8 @@ class SensitivityRow:
 
 def sensitivity_sweep(
     df,
-    budgets: List[float] | None = None,
-    capacity_scales: List[float] | None = None,
+    budgets: list[float] | None = None,
+    capacity_scales: list[float] | None = None,
     time_limit_sec: int = 60,
 ) -> pd.DataFrame:
     if budgets is None:
@@ -46,15 +45,17 @@ def sensitivity_sweep(
             res, _ = optimizer.optimize(
                 df, budget=b, capacities=cap, time_limit_sec=time_limit_sec, gap=0.01
             )
-            rows.append(SensitivityRow(
-                scenario=f"B={int(b):,}_cap={cs:.2f}",
-                budget=b,
-                capacity_scale=cs,
-                status=res.status,
-                objective=res.objective,
-                cost_total=res.cost_total,
-                expected_recovery=res.expected_recovery,
-                net_recovery=res.expected_recovery - res.cost_total,
-                n_assigned=res.n_assigned,
-            ))
+            rows.append(
+                SensitivityRow(
+                    scenario=f"B={int(b):,}_cap={cs:.2f}",
+                    budget=b,
+                    capacity_scale=cs,
+                    status=res.status,
+                    objective=res.objective,
+                    cost_total=res.cost_total,
+                    expected_recovery=res.expected_recovery,
+                    net_recovery=res.expected_recovery - res.cost_total,
+                    n_assigned=res.n_assigned,
+                )
+            )
     return pd.DataFrame([r.__dict__ for r in rows])
