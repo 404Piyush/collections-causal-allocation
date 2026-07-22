@@ -71,6 +71,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.lock
           pip install pytest pytest-cov
+      - name: Generate synthetic dataset for tests
+        run: python -m data.build_dataset
       - name: Run unit tests with coverage
         run: pytest --cov=src --cov-report=xml --cov-report=term-missing
       - name: Upload coverage artifact
@@ -95,6 +97,8 @@ jobs:
           pip install -r requirements.lock
           pip install -e ".[notebook]"
           pip install jupyter
+      - name: Generate synthetic dataset
+        run: python -m data.build_dataset
       - run: |
           python notebooks/_build.py
           python -m jupyter nbconvert --to notebook --execute --inplace notebooks/demo.ipynb

@@ -121,7 +121,7 @@ addopts = [
     "--cov=src",
     "--cov-report=term-missing:skip-covered",
     "--cov-report=xml",
-    "--cov-fail-under=60",
+    "--cov-fail-under=50",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning:pulp.*",

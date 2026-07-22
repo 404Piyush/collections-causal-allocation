@@ -12,7 +12,7 @@ from ..rdd import density_test, local_linear, placebo
 
 
 def _triangular_kernel(u: np.ndarray, h: float) -> np.ndarray:
-    return np.maximum(0.0, 1.0 - np.abs(u) / max(float(h), 1e-9))
+    return np.asarray(np.maximum(0.0, 1.0 - np.abs(u) / max(float(h), 1e-9)))
 
 
 def plot_binned_scatter(

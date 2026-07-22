@@ -28,7 +28,7 @@ def plot_allocation_heatmap(assignments: pd.DataFrame, output_path):
             ax.text(
                 j,
                 i,
-                int(pivot.iloc[i, j]),
+                str(int(pivot.iloc[i, j])),
                 ha="center",
                 va="center",
                 color="black" if pivot.iloc[i, j] < pivot.values.max() * 0.6 else "white",

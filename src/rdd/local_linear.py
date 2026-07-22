@@ -27,7 +27,7 @@ class RDDResult:
 
 def _triangular_kernel(u: np.ndarray, h: float) -> np.ndarray:
     rel = np.abs(u) / max(float(h), 1e-9)
-    return np.maximum(0.0, 1.0 - rel)
+    return np.asarray(np.maximum(0.0, 1.0 - rel))
 
 
 def _wls(X: np.ndarray, Y: np.ndarray, w: np.ndarray) -> tuple[np.ndarray, np.ndarray]:

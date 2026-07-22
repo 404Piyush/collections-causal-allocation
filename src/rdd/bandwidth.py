@@ -22,7 +22,7 @@ def _silverman(R: np.ndarray) -> float:
     iqr = float(np.percentile(R, 75) - np.percentile(R, 25))
     a = min(s, iqr / 1.349)
     a = max(a, 1e-6)
-    return 1.06 * a * n ** (-0.2)
+    return float(1.06 * a * n ** (-0.2))
 
 
 def _local_var(R: np.ndarray, Y: np.ndarray) -> float:
