@@ -99,6 +99,9 @@ jobs:
           pip install jupyter
       - name: Generate synthetic dataset
         run: python -m data.build_dataset
-      - run: |
+      - name: Run full pipeline to populate outputs/reports
+        run: python run_pipeline.py
+      - name: Build + execute notebook
+        run: |
           python notebooks/_build.py
           python -m jupyter nbconvert --to notebook --execute --inplace notebooks/demo.ipynb
